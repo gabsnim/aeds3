@@ -127,8 +127,8 @@ Estão localizados na pasta `dados/`, com arquivos:
 ✅ Índices diretos e indiretos  
 ✅ Relacionamento 1:N com Árvore B+  
 ✅ Visualização por temporada  
-❌ Exclusão segura de séries  
-❌ Validação da existência da série ao criar episódio 
+✅ Exclusão segura de séries  
+✅ Validação da existência da série ao criar episódio 
 
 ## Questionário
 
