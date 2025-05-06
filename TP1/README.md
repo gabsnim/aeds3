@@ -150,14 +150,14 @@ Estão localizados na pasta `dados/`, com arquivos:
 - ✅ **Há uma visualização das séries que mostre os episódios por temporada?**  
   **Resposta:** Sim
 
-- ❌ **A remoção de séries checa se há algum episódio vinculado a ela?**  
-  **Resposta:** Não
+- ✅ **A remoção de séries checa se há algum episódio vinculado a ela?**  
+  **Resposta:** Sim
 
-- ❌ **A inclusão da série em um episódio se limita às séries existentes?**  
-  **Resposta:** Não
+- ✅ **A inclusão da série em um episódio se limita às séries existentes?**  
+  **Resposta:** Sim
 
-- ⚠️ **O trabalho está funcionando corretamente?**  
-  **Resposta:** Sim/Não – Funcionando corretamente infere TODAS as especificações implementadas e funcionando, o que não é o caso aqui.
+- ✅ **O trabalho está funcionando corretamente?**  
+  **Resposta:** Sim.
 
 - ✅ **O trabalho está completo?**  
   **Resposta:** Sim
