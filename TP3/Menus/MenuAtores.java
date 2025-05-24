@@ -1,27 +1,32 @@
+// MenuAtores.java com suporte à lista invertida e todas as funcionalidades originais
 package Menus;
 
-import java.util.Scanner;
-import java.util.List;
+import java.util.*;
 import Relacionamentos.ArquivoRelacionamentoSerieAtor;
 import Arquivos.ArquivoAtores;
 import Entidades.Ator;
-import Arquivos.ArquivoSerie; 
-import Entidades.Serie; 
+import Arquivos.ArquivoSerie;
+import Entidades.Serie;
+import ListaInvertida.IndiceInvertidoAtores;
+import java.io.*;
 
 public class MenuAtores {
 
     private ArquivoRelacionamentoSerieAtor fileRelacionamentos;
     private ArquivoAtores fileAtores;
     private Scanner scan;
-    private ArquivoSerie fileSerie;   
+    private ArquivoSerie fileSerie;
+    private IndiceInvertidoAtores indice;
 
     public MenuAtores() {
         try {
             fileAtores = new ArquivoAtores();
-            fileSerie = new ArquivoSerie(); // <<< INSTANCIAR
+            fileSerie = new ArquivoSerie();
             fileRelacionamentos = new ArquivoRelacionamentoSerieAtor();
+            indice = new IndiceInvertidoAtores();
+            indice.construirIndice(fileAtores);
         } catch (Exception e) {
-            System.out.println("Erro crítico ao iniciar arquivos necessários (Atores, Séries ou Relacionamentos): " + e.getMessage());
+            System.out.println("Erro crítico ao iniciar arquivos necessários: " + e.getMessage());
             fileAtores = null;
             fileSerie = null;
             fileRelacionamentos = null;
@@ -54,42 +59,22 @@ public class MenuAtores {
 
             switch (opcao) {
                 case 1:
-                    try {
-                        searchAtor();
-                    } catch (Exception e) {
-                        System.out.println("ERRO ao buscar ator: " + e.getMessage());
-                    }
+                    try { searchAtor(); } catch (Exception e) { System.out.println("ERRO ao buscar ator: " + e.getMessage()); }
                     break;
                 case 2:
-                    try {
-                        addAtor();
-                    } catch (Exception e) {
-                        System.out.println("ERRO ao adicionar ator: " + e.getMessage());
-                    }
+                    try { addAtor(); } catch (Exception e) { System.out.println("ERRO ao adicionar ator: " + e.getMessage()); }
                     break;
                 case 3:
-                    try {
-                        changeAtor();
-                    } catch (Exception e) {
-                        System.out.println("ERRO ao alterar ator: " + e.getMessage());
-                    }
+                    try { changeAtor(); } catch (Exception e) { System.out.println("ERRO ao alterar ator: " + e.getMessage()); }
                     break;
                 case 4:
-                    try {
-                        deleteAtor();
-                    } catch (Exception e) {
-                        System.out.println("ERRO ao excluir ator: " + e.getMessage());
-                    }
+                    try { deleteAtor(); } catch (Exception e) { System.out.println("ERRO ao excluir ator: " + e.getMessage()); }
                     break;
                 case 5:
-                    try {
-                        listAllAtores();
-                    } catch (Exception e) {
-                        System.out.println("ERRO ao listar atores: " + e.getMessage());
-                    }
+                    try { listAllAtores(); } catch (Exception e) { System.out.println("ERRO ao listar atores: " + e.getMessage()); }
                     break;
-                case 6: 
-                    try { listSeriesFromActor(); } catch (Exception e) { System.out.println("ERRO ao listar séries do ator: " + e.getMessage()); e.printStackTrace(); }
+                case 6:
+                    try { listSeriesFromActor(); } catch (Exception e) { System.out.println("ERRO ao listar séries do ator: " + e.getMessage()); }
                     break;
                 default:
                     break;
@@ -102,43 +87,41 @@ public class MenuAtores {
         System.out.print("Nome do ator: ");
         String nome = scan.nextLine();
 
-        try {
-            Ator novoAtor = new Ator(nome);
-            int idGerado = fileAtores.create(novoAtor);
-            System.out.println("Ator adicionado com sucesso! ID: " + idGerado);
-        } catch (Exception e) {
-            System.out.println("Erro ao adicionar ator: " + e.getMessage());
-        }
+        Ator novoAtor = new Ator(nome);
+        int idGerado = fileAtores.create(novoAtor);
+        novoAtor.setId(idGerado);
+        indice.indexarAtor(novoAtor);
+        indice.salvarIndice();
+        System.out.println("Ator adicionado com sucesso! ID: " + idGerado);
     }
 
     public void searchAtor() throws Exception {
-        if (fileAtores.isEmpty()) { // Verifica se há dados salvos
+        if (fileAtores.isEmpty()) {
             System.out.println("Não há atores cadastrados.");
             return;
         }
 
-        System.out.print("Nome do ator: ");
-        String nome = scan.nextLine();
+        System.out.print("Termo de busca: ");
+        String termo = scan.nextLine();
 
-        if (nome != null && !nome.isEmpty()) {
-            Ator[] atores = fileAtores.readNome(nome);
+        List<Integer> ids = indice.buscar(termo);
+        if (ids.isEmpty()) {
+            System.out.println("Nenhum ator encontrado com esse termo.");
+            return;
+        }
 
-            if (atores != null && atores.length > 0) {
-                System.out.println("\nAtores encontrados:");
-                for (Ator ator : atores) {
-                    System.out.println(ator);
-                    System.out.println("---------------------------");
-                }
-            } else {
-                System.out.println("Nenhum ator encontrado com esse nome.");
+        System.out.println("\nAtores encontrados:");
+        for (int id : ids) {
+            Ator ator = fileAtores.read(id);
+            if (ator != null) {
+                System.out.println(ator);
+                System.out.println("---------------------------");
             }
-        } else {
-            System.out.println("Nome inválido.");
         }
     }
 
     public void changeAtor() throws Exception {
-        if (fileAtores.isEmpty()) { // Verifica se há dados salvos
+        if (fileAtores.isEmpty()) {
             System.out.println("Não há atores cadastrados para alterar.");
             return;
         }
@@ -147,13 +130,11 @@ public class MenuAtores {
         String nome = scan.nextLine();
 
         Ator[] resultados = fileAtores.readNome(nome);
-
         if (resultados == null || resultados.length == 0) {
             System.out.println("Ator não encontrado.");
             return;
         }
 
-        System.out.println("Atores encontrados:");
         for (int i = 0; i < resultados.length; i++) {
             System.out.println("[" + i + "] " + resultados[i]);
         }
@@ -163,73 +144,72 @@ public class MenuAtores {
 
         if (index >= 0 && index < resultados.length) {
             Ator ator = resultados[index];
+            indice.desindexarAtor(ator);
 
             System.out.print("Novo nome [" + ator.getNome() + "]: ");
             String novoNome = scan.nextLine();
             if (!novoNome.isEmpty()) ator.setNome(novoNome);
 
             boolean sucesso = fileAtores.update(ator);
-            if (sucesso)
+            if (sucesso) {
+                indice.indexarAtor(ator);
+                indice.salvarIndice();
                 System.out.println("Ator atualizado com sucesso!");
-            else
+            } else {
                 System.out.println("Erro ao atualizar ator.");
+            }
         } else {
             System.out.println("Índice inválido.");
         }
     }
 
     public void deleteAtor() throws Exception {
-        if (fileAtores.isEmpty()) { // Verifica se há dados salvos
+        if (fileAtores.isEmpty()) {
             System.out.println("Não há atores cadastrados para excluir.");
             return;
         }
-        if (fileRelacionamentos == null) { // Verifica se o arquivo de relacionamentos foi carregado
-             System.out.println("Erro: Não foi possível carregar o arquivo de relacionamentos.");
-             return;
+        if (fileRelacionamentos == null) {
+            System.out.println("Erro: Não foi possível carregar o arquivo de relacionamentos.");
+            return;
         }
-
 
         System.out.print("Nome do ator a ser excluído: ");
         String nome = scan.nextLine();
 
         Ator[] resultados = fileAtores.readNome(nome);
-
         if (resultados == null || resultados.length == 0) {
             System.out.println("Ator não encontrado.");
             return;
         }
 
-        System.out.println("Atores encontrados:");
         for (int i = 0; i < resultados.length; i++) {
             System.out.println("[" + i + "] " + resultados[i].getNome() + " - ID: " + resultados[i].getId());
         }
 
         System.out.print("Digite o número do ator que deseja excluir: ");
         int index;
-         try {
-             index = Integer.parseInt(scan.nextLine());
-         } catch (NumberFormatException e) {
-             System.out.println("Entrada inválida. Por favor, digite um número.");
-             return;
-         }
-
+        try {
+            index = Integer.parseInt(scan.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Entrada inválida. Por favor, digite um número.");
+            return;
+        }
 
         if (index >= 0 && index < resultados.length) {
             int atorIdParaExcluir = resultados[index].getId();
-
-            // --- INÍCIO DA VALIDAÇÃO ---
             boolean temVinculos = fileRelacionamentos.hasLinksAtor(atorIdParaExcluir);
 
             if (temVinculos) {
-                System.out.println("\nERRO: O ator '" + resultados[index].getNome() + "' (ID: " + atorIdParaExcluir + ") não pode ser excluído pois está vinculado a uma ou mais séries.");
-                System.out.println("Remova o ator das séries antes de tentar excluí-lo.");
+                System.out.println("\nERRO: O ator está vinculado a uma ou mais séries.");
             } else {
-                // --- FIM DA VALIDAÇÃO ---
                 boolean sucesso = fileAtores.delete(atorIdParaExcluir);
-                if (sucesso)
+                if (sucesso) {
+                    indice.desindexarAtor(resultados[index]);
+                    indice.salvarIndice();
                     System.out.println("Ator excluído com sucesso!");
-                else
-                    System.out.println("Erro ao excluir ator do arquivo principal."); 
+                } else {
+                    System.out.println("Erro ao excluir ator do arquivo principal.");
+                }
             }
         } else {
             System.out.println("Índice inválido.");
@@ -237,13 +217,12 @@ public class MenuAtores {
     }
 
     public void listAllAtores() throws Exception {
-        if (fileAtores.isEmpty()) { // Verifica se há dados salvos
+        if (fileAtores.isEmpty()) {
             System.out.println("Não há atores cadastrados.");
             return;
         }
 
-        Ator[] atores = fileAtores.readAll(); // Lê todos os atores do arquivo
-
+        Ator[] atores = fileAtores.readAll();
         if (atores.length == 0) {
             System.out.println("Não há atores cadastrados.");
         } else {
@@ -255,9 +234,6 @@ public class MenuAtores {
         }
     }
 
-        /**
-     * Lista as séries em que um ator específico está vinculado.
-     */
     public void listSeriesFromActor() throws Exception {
         System.out.println("\n--- Listar Séries do Ator ---");
 
@@ -265,6 +241,7 @@ public class MenuAtores {
             System.out.println("Não há atores cadastrados.");
             return;
         }
+
         System.out.print("Digite o nome (ou parte do nome) do ator: ");
         String nomeAtor = scan.nextLine();
         Ator[] atoresEncontrados = fileAtores.readNome(nomeAtor);
@@ -280,9 +257,7 @@ public class MenuAtores {
         if (atoresEncontrados.length == 1) {
             atorSelecionado = atoresEncontrados[0];
             idAtorSelecionado = atorSelecionado.getId();
-            System.out.println("Ator selecionado: " + atorSelecionado.getNome() + " (ID: " + idAtorSelecionado + ")");
         } else {
-            System.out.println("Múltiplos atores encontrados. Selecione um:");
             for (int i = 0; i < atoresEncontrados.length; i++) {
                 System.out.println("[" + i + "] " + atoresEncontrados[i].getNome() + " (ID: " + atoresEncontrados[i].getId() + ")");
             }
@@ -302,31 +277,18 @@ public class MenuAtores {
             }
         }
 
-        System.out.println("\nBuscando séries para o ator '" + atorSelecionado.getNome() + "'...");
         List<Integer> idsSeries = fileRelacionamentos.getSeriesPorAtor(idAtorSelecionado);
-
         if (idsSeries == null || idsSeries.isEmpty()) {
             System.out.println("Nenhuma série vinculada a este ator foi encontrada.");
         } else {
             System.out.println("Séries vinculadas:");
             System.out.println("------------------");
-            int count = 0;
             for (int idSerie : idsSeries) {
-                Serie serie = fileSerie.read(idSerie); 
+                Serie serie = fileSerie.read(idSerie);
                 if (serie != null) {
                     System.out.println("- " + serie.getNome() + " (ID: " + serie.getId() + ")");
-                    count++;
-                } else {
-                    // Isso indicaria uma inconsistência (link existe, mas série não)
-                    System.out.println("- [Erro: Série com ID " + idSerie + " não encontrada no arquivo principal]");
                 }
             }
-             if (count == 0 && !idsSeries.isEmpty()) {
-                 System.out.println("Aviso: Foram encontrados vínculos, mas as séries correspondentes não puderam ser lidas.");
-             } else if (count > 0) {
-                 System.out.println("------------------");
-                 System.out.println("Total: " + count + " série(s) encontrada(s).");
-             }
         }
     }
 }
